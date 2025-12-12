@@ -1,6 +1,6 @@
 module github.com/006lp/akashchat-api-go
 
-go 1.24.5
+go 1.25.4
 
 require (
 	github.com/gin-contrib/cors v1.7.6

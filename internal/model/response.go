@@ -49,8 +49,8 @@ type Message struct {
 
 // Usage represents the token usage statistics.
 type Usage struct {
-	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
+	PromptTokens     int `json:"prompt_tokens"`
 	TotalTokens      int `json:"total_tokens"`
 }
 
@@ -61,13 +61,14 @@ type OpenAIStreamCompletion struct {
 	Created int64                `json:"created"`
 	Model   string               `json:"model"`
 	Choices []OpenAIStreamChoice `json:"choices"`
+	Usage   *Usage               `json:"usage,omitempty"`
 }
 
 // OpenAIStreamChoice represents a single choice in the chat completion stream response.
 type OpenAIStreamChoice struct {
 	Index        int    `json:"index"`
 	Delta        Delta  `json:"delta"`
-	FinishReason string `json:"finish_reason,omitempty"`
+	FinishReason *string `json:"finish_reason"`
 }
 
 // Delta represents a delta in the chat completion stream response.
@@ -75,6 +76,7 @@ type Delta struct {
 	Role    string `json:"role,omitempty"`
 	Content string `json:"content,omitempty"`
 }
+
 // OpenAIModel represents a single model in the OpenAI models list.
 type OpenAIModel struct {
 	ID         string      `json:"id"`

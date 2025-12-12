@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -178,11 +179,33 @@ func (a *AkashService) processStream(body io.Reader, modelName string, writer io
 					{
 						Index:        0,
 						Delta:        model.Delta{},
-						FinishReason: finishReason,
+						FinishReason: &finishReason,
 					},
 				},
 			}
+
+			// Extract usage only for the final stop reason
+			if finishReason == "stop" {
+				var usage model.Usage
+				usageRegex := regexp.MustCompile(`"usage":\{"promptTokens":(\d+),"completionTokens":(\d+)\}`)
+				usageMatch := usageRegex.FindStringSubmatch(line)
+				if len(usageMatch) > 2 {
+					promptTokens, _ := strconv.Atoi(usageMatch[1])
+					completionTokens, _ := strconv.Atoi(usageMatch[2])
+					usage = model.Usage{
+						PromptTokens:     promptTokens,
+						CompletionTokens: completionTokens,
+						TotalTokens:      promptTokens + completionTokens,
+					}
+					streamResp.Usage = &usage
+				}
+			}
 			a.writeStreamResponse(writer, streamResp)
+			// Send the final [DONE] marker
+			fmt.Fprintf(writer, "data: [DONE]\n\n")
+			if flusher, ok := writer.(http.Flusher); ok {
+				flusher.Flush()
+			}
 			break
 		}
 
@@ -291,10 +314,10 @@ func (a *AkashService) extractImageGenerationInfo(respText string) (string, stri
 // pollImageStatus polls the image status until completion
 func (a *AkashService) pollImageStatus(jobID string) (string, error) {
 	maxAttempts := 60 // Maximum 1 minute polling
-	
+
 	for i := 0; i < maxAttempts; i++ {
 		url := fmt.Sprintf("https://chat.akash.network/api/image-status?ids=%s", jobID)
-		
+
 		resp, err := a.httpClient.Get(url, nil)
 		if err != nil {
 			return "", fmt.Errorf("failed to check image status: %w", err)
@@ -332,6 +355,7 @@ func (a *AkashService) extractTextGenerationInfo(respText string, modelName stri
 	var messageID string
 	var allContent strings.Builder
 	var finishReason string
+	var promptTokens, completionTokens int
 
 	lines := strings.Split(respText, "\n")
 	var contentStarted bool
@@ -353,11 +377,18 @@ func (a *AkashService) extractTextGenerationInfo(respText string, modelName stri
 		// Extract finishReason
 		if strings.HasPrefix(line, "e:{\"finishReason\":") {
 			reasonRegex := regexp.MustCompile(`"finishReason":"([^"]+)"`)
-			match := reasonRegex.FindStringSubmatch(line)
-			if len(match) > 1 {
-				finishReason = match[1]
+			reasonMatch := reasonRegex.FindStringSubmatch(line)
+			if len(reasonMatch) > 1 {
+				finishReason = reasonMatch[1]
 			}
-			break
+			// Extract usage
+			usageRegex := regexp.MustCompile(`"usage":\{"promptTokens":(\d+),"completionTokens":(\d+)\}`)
+			usageMatch := usageRegex.FindStringSubmatch(line)
+			if len(usageMatch) > 2 {
+				promptTokens, _ = strconv.Atoi(usageMatch[1])
+				completionTokens, _ = strconv.Atoi(usageMatch[2])
+			}
+			continue
 		}
 
 		// Collect content lines
@@ -389,9 +420,9 @@ func (a *AkashService) extractTextGenerationInfo(respText string, modelName stri
 			},
 		},
 		Usage: model.Usage{
-			PromptTokens:     0, // Placeholder, as Akash does not provide this
-			CompletionTokens: 0, // Placeholder
-			TotalTokens:      0, // Placeholder
+			PromptTokens:     promptTokens,
+			CompletionTokens: completionTokens,
+			TotalTokens:      promptTokens + completionTokens,
 		},
 	}
 }
