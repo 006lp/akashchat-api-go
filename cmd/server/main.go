@@ -36,10 +36,11 @@ func main() {
 
 	// Setup routes
 	v1 := r.Group("/v1")
-	{
-		v1.POST("/chat/completions", chatHandler.ChatCompletions)
-		v1.GET("/models", modelHandler.GetModels)
+	if cfg.BearerToken != "" {
+		v1.Use(handler.AuthMiddleware(cfg.BearerToken))
 	}
+	v1.POST("/chat/completions", chatHandler.ChatCompletions)
+	v1.GET("/models", modelHandler.GetModels)
 
 	// Health check endpoint
 	r.GET("/health", func(c *gin.Context) {

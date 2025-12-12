@@ -8,6 +8,7 @@ import (
 type Config struct {
 	ServerAddress    string
 	AkashBaseURL     string
+	BearerToken      string
 	DefaultTimeout   int
 	SessionCacheSize int
 }
@@ -17,6 +18,7 @@ func Load() *Config {
 	cfg := &Config{
 		ServerAddress:    getEnv("SERVER_ADDRESS", "localhost:16571"),
 		AkashBaseURL:     getEnv("AKASH_BASE_URL", "https://chat.akash.network"),
+		BearerToken:      getEnv("BEARER_TOKEN", ""),
 		DefaultTimeout:   60,
 		SessionCacheSize: 100,
 	}
