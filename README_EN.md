@@ -13,6 +13,7 @@ A Go-based REST API service that provides a proxy interface to Akash Chat API, s
 - **Text Generation**: Support for various text generation models, including streaming support.
 - **Image Generation**: Support for AkashGen image generation model
 - **Session Management**: Automatic session token caching and refresh
+- **Authentication Support**: Optional Bearer Token authentication mechanism
 - **Error Handling**: Comprehensive error handling and validation
 - **Configurable**: Environment-based configuration
 - **Docker Support**: Ready-to-use Docker configuration
@@ -65,6 +66,15 @@ docker run -p 16571:16571 006lp/akashchat-api-go
 ```
 
 ## API Usage
+
+### Authentication
+
+If the `BEARER_TOKEN` environment variable is set, all `/v1/*` endpoints require the `Authorization: Bearer <token>` header in requests.
+
+Example request header:
+```
+Authorization: Bearer YOUR_BEARER_TOKEN
+```
 
 ### Text Generation
 
@@ -194,6 +204,7 @@ The application can be configured using environment variables:
 |----------|---------|-------------|
 | `SERVER_ADDRESS` | `localhost:16571` | Server address and port |
 | `AKASH_BASE_URL` | `https://chat.akash.network` | Akash Chat API base URL |
+| `BEARER_TOKEN` |  | Bearer Token for API authentication (leave empty to disable authentication) |
 
 Example:
 ```bash

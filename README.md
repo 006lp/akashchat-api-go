@@ -13,6 +13,7 @@
 - **文本生成**: 支持多种文本生成模型，并支持流式响应
 - **图像生成**: 支持 AkashGen 图像生成模型
 - **会话管理**: 自动会话令牌缓存和刷新
+- **鉴权支持**: 可选的 Bearer Token 鉴权机制
 - **错误处理**: 全面的错误处理和验证
 - **可配置**: 基于环境变量的配置
 - **Docker 支持**: 提供即用的 Docker 配置
@@ -65,6 +66,15 @@ docker run -p 16571:16571 006lp/akashchat-api-go
 ```
 
 ## API 使用
+
+### 鉴权
+
+如果设置了 `BEARER_TOKEN` 环境变量，所有 `/v1/*` 端点都需要在请求头中包含 `Authorization: Bearer <token>`。
+
+示例请求头:
+```
+Authorization: Bearer YOUR_BEARER_TOKEN
+```
 
 ### 文本生成
 
@@ -194,6 +204,7 @@ curl http://localhost:16571/health
 |------|--------|------|
 | `SERVER_ADDRESS` | `localhost:16571` | 服务器地址和端口 |
 | `AKASH_BASE_URL` | `https://chat.akash.network` | Akash Chat API 基础 URL |
+| `BEARER_TOKEN` |  | Bearer Token 用于 API 鉴权（留空则不启用鉴权） |
 
 示例:
 ```bash
@@ -320,6 +331,7 @@ docker run -d \
   --name akashchat-api \
   -p 16571:16571 \
   -e SERVER_ADDRESS="0.0.0.0:16571" \
+  -e BEARER_TOKEN="your_bearer_token" \
   akashchat-api-go:latest
 ```
 
